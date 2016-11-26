@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# description: Puma service
+
+
+# configuration parameters can be set like options:
+PORT=#LC2_PORT#
+INSTANCE=#APP_NAME#
+APP_DIR=#LC2_DIR#
+ENV=production
+
+INSTANCE=`echo "#APP_NAME#" | tr '[:upper:]' '[:lower:]'`
+SCRIPT="puma_"$INSTANCE
+
+# example of usage of the script:
+# pum_dev -p 666 -i DEV2 -a /var/lib/puma/dev2.linkcare.es -e production
+# dont forget to change in /etc/passwd  /bin/false per /bin/bash
+
+while getopts p:i:a:e: opt; do
+  case $opt in
+  p)
+      PORT=$OPTARG
+      ;;
+  i)
+      INSTANCE=`echo "$OPTARG" | tr '[:upper:]' '[:lower:]'`
+      ;;
+  a)
+      APP_DIR=$OPTARG
+      ;;
+  e)
+      ENV=$OPTARG
+      ;;
+  esac
+done
+
+check(){
+		PID=`lsof -iTCP:$PORT`
+		if [ "$PID" != "" ]; then
+    			echo "ERROR: port $PORT is already in use"
+   				echo "Killing process by port = $PORT, PID = $PID :"
+   				sudo kill -9 $PID
+		fi
+		if [ ! -d "$APP_DIR" ]; then
+  			echo "WARNING: Directory $APP_DIR doesnt exist ==> Creating directory"
+  			mkdir $APP_DIR
+		fi
+		if [ ! -d "$APP_DIR/log" ]; then
+  			echo "WARNING: Directory $APP_DIR/log doesnt exist ==> Creating directory"
+  			mkdir "$APP_DIR/log"
+  			# create empty log file
+  			# echo -n "" > "$APP_DIR/log/logs.txt"
+  			chmod -R 777 "$APP_DIR/log"
+		fi
+
+}
+start() {
+	check
+	echo "Using default parameters: PORT = [$PORT]; INSTANCE=[$INSTANCE]; APP_DIR=[$APP_DIR]; ENV=[$ENV];"
+	cd "$APP_DIR"
+  echo "$ENV"
+  echo "$PORT"
+  puma -e "$ENV" -d -p "$PORT" >>"$APP_DIR"/log/logs.log & echo $! > "$APP_DIR"/program.pid;
+}
+stop(){
+	PID=$(cat $APP_DIR/program.pid)
+  if [[ -n "$PID" ]]
+    then
+      if ps -p $PID > /dev/null
+      then
+          echo "Killing process $APP_DIR/program.pid: $PID"
+          kill -9 $PID > /dev/null
+        else
+          PID=`lsof -t -i:$PORT`
+          if [[ -n "$PID" ]]
+            then
+              if ps -p $PID > /dev/null
+              then
+              echo $LINENO
+                  echo "Killing process $PID by port: $PORT"
+                  kill -9 $PID > /dev/null
+                  echo "Done!"
+              fi
+            else
+              echo "service wasn’t started"
+          fi
+      fi
+  else
+  echo "service wasn’t started"
+  fi
+}
+
+set_permissions(){
+	if ls -ld `echo $1` | grep -q ^drw-rw-rw-
+	then
+    	continue
+	else
+		echo "Changing permissions for $1 ..."
+    	chmod -R 777 `echo $1`
+	fi
+}
+
+if [[ $# -eq 0 ]] ; then
+	start
+fi
+case "$1" in
+	start)
+		start
+		;;
+  stopall)
+    	pkill -9 -f puma;;
+  stop)
+    	stop
+		 ;;
+  get_pid)
+		echo `lsof -t -i:$PORT`
+		;;
+	install)
+		check
+		set_permissions $APP_DIR/log/logs.log
+		set_permissions $APP_DIR/program.pid
+		# check if its installed correctly
+		if (update-rc.d $SCRIPT defaults); then
+  			echo "$SCRIPT is installed correctly"
+		else
+  			echo echo "ERROR: $SCRIPT is NOT installed correctly"
+		fi
+
+	;;
+	restart)
+		stop
+		start
+	;;
+  *) echo 'Unknown parameter' ;;
+esac

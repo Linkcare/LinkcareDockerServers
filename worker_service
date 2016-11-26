@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# description: Linkcare worker service
+
+
+# configuration parameters can be set like options:
+INSTANCE=`echo "#APP_NAME#" | tr '[:upper:]' '[:lower:]'`
+ENV=production
+WS_DIR=#WS_DIR#
+
+SCRIPT="worker_"$INSTANCE
+
+# example of usage of the script:
+# worker_lc -w /var/www/html/dev2.linkcare.es -e production
+# dont forget to change in /etc/passwd  /bin/false per /bin/bash
+
+while getopts e:i:w: opt; do
+  case $opt in
+    e)
+        ENV=$OPTARG
+        ;;
+    i)
+        INSTANCE=`echo "$OPTARG" | tr '[:upper:]' '[:lower:]'`
+        ;;
+    w)
+        WS_DIR=$OPTARG
+        ;;
+  esac
+done
+
+check(){
+		if [ ! -d "$WS_DIR" ]; then
+  			echo "WARNING: Directory $WS_DIR doesnt exist ==> Creating directory"
+  			mkdir $WS_DIR
+		fi
+		if [ ! -d "$WS_DIR/log" ]; then
+  			echo "ERROR: Directory $WS_DIR/log doesnt exist ==> Creating directory"
+  			mkdir "$WS_DIR/log"
+  			chmod -R 777 "$WS_DIR/log"
+		fi
+
+}
+start() {
+	check
+	echo "Using default parameters: INSTANCE=[$INSTANCE]; WS_DIR=[$WS_DIR]; ENV=[$ENV];"
+  # start resque worker for each instance and save PID in file iin ws tmp folder
+  cd $WS_DIR;
+  APP_INCLUDE=background/init.php QUEUE=$INSTANCE PREFIX=$INSTANCE COUNT=1 INTERVAL=2 VVERBOSE=0 php vendor/chrisboulton/php-resque/resque.php & echo $! > $WS_DIR/tmp/resque.pid
+}
+stop(){
+  # send quit signal to resque worker
+  PID=$(cat $WS_DIR/tmp/resque.pid)
+  (kill $PID 2>&1) >/dev/null
+}
+
+set_permissions(){
+	if ls -ld `echo $1` | grep -q ^drw-rw-rw-
+	then
+    	continue
+	else
+		echo "Changing permissions for $1 ..."
+    	chmod -R 777 `echo $1`
+	fi
+}
+
+if [[ $# -eq 0 ]] ; then
+	start
+fi
+case "$1" in
+	start)
+		start
+		;;
+  stop)
+    stop
+		 ;;
+	install)
+		check
+    set_permissions $WS_DIR/tmp/resque.pid
+		# check if its installed correctly
+		if (update-rc.d $SCRIPT defaults); then
+  			echo "$SCRIPT is installed correctly"
+		else
+  			echo echo "ERROR: $SCRIPT is NOT installed correctly"
+		fi
+
+	;;
+	restart)
+		stop
+		start
+	;;
+  *) echo 'Unknown parameter' ;;
+esac
