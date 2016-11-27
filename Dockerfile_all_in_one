@@ -175,22 +175,24 @@ COPY apache2-foreground /usr/local/bin/
 RUN chmod 755 /usr/local/bin/apache2-foreground
 
 # INSTALL RUBY
-ENV RUBY_INI_DIR /usr/local/etc
-RUN mkdir -p $RUBY_INI_DIR; \
+RUN apt-get update \
+  && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c zlib1g-dev git --no-install-recommends
+
+RUN mkdir -p /usr/local/etc; \
   { \
     echo 'install: --no-document'; \
     echo 'update: --no-document'; \
-  } >> $RUBY_INI_DIR/gemrc
+  } >> /usr/local/etc/gemrc
 
 ENV RUBY_MAJOR 2.3
 ENV RUBY_VERSION 2.3.1
 ENV RUBY_DOWNLOAD_SHA256 b87c738cb2032bf4920fef8e3864dc5cf8eae9d89d8d523ce0236945c5797dcd
-ENV RUBYGEMS_VERSION 2.6.4
+ENV RUBYGEMS_VERSION 2.6.8
 
 # some of ruby's build scripts are written in ruby
 # we purge this later to make sure our final image uses what we just built
 RUN set -ex; \
-  buildDeps='bison libgdbm-dev ruby'; \
+  buildDeps='bison libgdbm-dev ruby curl libssl-dev  libxml2-dev'; \
   apt-get update; \
   apt-get install -y --no-install-recommends $buildDeps; \
   rm -rf /var/lib/apt/lists/*; \
@@ -213,7 +215,7 @@ RUN cd /usr/src/ruby; \
 RUN cd ~; \
   rm -r /usr/src/ruby
 
-ENV BUNDLER_VERSION 1.11.2
+ENV BUNDLER_VERSION 1.13.6
 
 RUN gem install bundler --version "$BUNDLER_VERSION"
 
