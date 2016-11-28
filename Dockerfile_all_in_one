@@ -263,6 +263,6 @@ RUN curl -SLO "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-
 ######################################################################
 #INSTALL REDIS SERVER
 ######################################################################
-RUN apt-get install -y redis-server
+RUN apt-get update && apt-get install -y redis-server
 
 EXPOSE 80 3000
