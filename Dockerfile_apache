@@ -34,7 +34,7 @@ RUN a2dismod mpm_event && a2enmod mpm_prefork \
   echo 'User www-data'; \
   echo 'Group www-data'; \
   echo 'HostnameLookups Off'; \
-  echo 'ErrorLog /var/log/apache2/error_log'; \
+  echo 'ErrorLog /proc/self/fd/2'; \
   echo 'LogLevel warn'; \
   echo ' '; \
   echo 'IncludeOptional mods-enabled/*.load'; \
