@@ -3,7 +3,7 @@ FROM ubuntu:16.04
 # INSTALL RUBY
 
 RUN apt-get update \
-  && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c zlib1g-dev git --no-install-recommends
+  && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c zlib1g-dev git imagemagick --no-install-recommends
 
 RUN mkdir -p /usr/local/etc; \
   { \
@@ -42,7 +42,7 @@ RUN cd /usr/src/ruby; \
 RUN cd ~; \
   rm -r /usr/src/ruby
 
-ENV BUNDLER_VERSION 1.13.6
+ENV BUNDLER_VERSION 1.13.7
 
 RUN gem install bundler --version "$BUNDLER_VERSION"
 
