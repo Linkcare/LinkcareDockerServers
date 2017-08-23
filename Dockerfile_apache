@@ -126,8 +126,6 @@ RUN cd /usr/src/php; \
   { find /usr/local/bin /usr/local/sbin -type f -executable -exec strip --strip-all '{}' + || true; }; \
   make clean
 
-
-# INSTALL AND CONFIGURE PHP EXTENSIONS
 # Download Oracle instantclient (OS drivers)
 RUN apt-get install -y wget \
   && wget -P /tmp -nv http://library.case.edu/instantclient-basic-linux.x64-12.1.0.2.0.zip \

@@ -145,7 +145,10 @@ RUN apt-get install -y unzip \
   && ln -s /usr/local/instantclient/sqlplus /usr/bin/sqlplus
 
 # Install libraries required for PHP extensions
-RUN apt-get install -y apt-utils git curl libxml2-dev libbz2-dev re2c libpng++-dev libpng3 libjpeg-dev libvpx-dev zlib1g-dev libgd-dev libssl-dev libtidy-dev libxslt1-dev libmagic-dev libexif-dev file libssh2-1-dev libaio-dev libbz2-dev libpng-dev libpcre3-dev libfreetype6-dev libmcrypt-dev libxslt-dev
+RUN apt-get install -y apt-utils git curl libxml2-dev libbz2-dev re2c libpng++-dev libpng3 libjpeg-dev libvpx-dev \
+  zlib1g-dev libgd-dev libssl-dev libtidy-dev libxslt1-dev libmagic-dev libexif-dev file libssh2-1-dev libaio-dev \
+  libbz2-dev libpng-dev libpcre3-dev libfreetype6-dev libmcrypt-dev libxslt-dev \
+  xfonts-base xfonts-75dpi fonts-texgyre fonts-wqy-microhei ttf-wqy-microhei fonts-wqy-zenhei ttf-wqy-zenhei
 
 # Install PHP extensions
 COPY php-ext-* /usr/local/bin/
