@@ -153,12 +153,7 @@ RUN php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/
   && php-ext-install iconv mcrypt mbstring xsl soap bcmath bz2 calendar exif shmop gd oci8 zip
 
 # Install Redis PHP extension
-RUN curl -sS https://codeload.github.com/phpredis/phpredis/zip/php7 -o /tmp/phpredis.zip \
-  && cd /tmp \
-  && unzip phpredis.zip \
-  && mv /tmp/phpredis-php7 /usr/src/php/ext/redis \
-  && php-ext-install redis \
-  && rm /tmp/phpredis.zip
+RUN pecl install redis && php-ext-enable redis
 
 # Install oauth (authentication) PHP extension
 RUN pecl install oauth \
