@@ -6,6 +6,7 @@ Version 2.0.0
 ====================================
 PHP Apache server:
 - Changed the way of installing PHP Redis extensions (now uses 'pecl')
+- PHP Version updated from 7.0.5 to 7.3.8
 
 Rails Server:
 - Updated bundler version to 1.17.2
