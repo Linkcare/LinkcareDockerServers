@@ -148,7 +148,7 @@ RUN apt-get install -y apt-utils git curl libxml2-dev libbz2-dev re2c libpng++-d
 RUN pecl install mcrypt-1.0.2 && php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
   && php-ext-configure oci8 --with-oci8=instantclient,/usr/local/instantclient \
   && php-ext-install iconv mbstring xsl soap bcmath bz2 calendar exif shmop gd oci8 zip \
-  && php-ext-enable mcrypt
+  && php-ext-enable mcrypt opcache
 
 # Install Redis PHP extension
 RUN pecl install redis && php-ext-enable redis

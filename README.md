@@ -2,6 +2,11 @@
 / * LinkcareDockerServer version history */
 /*****************************************/
 
+Version 2.1.0
+====================================
+PHP Apache server:
+- Enabled PHP module "opcache" to accelerate loading times of PHP files
+
 Version 2.0.0
 ====================================
 PHP Apache server:
