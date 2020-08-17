@@ -116,6 +116,7 @@ RUN cd /usr/src/php; \
     --disable-cgi \
     --enable-mysqlnd \
     --enable-mbstring \
+    --with-mysqli \
     --with-curl \
     --with-libedit \
     --with-openssl \
