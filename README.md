@@ -4,6 +4,13 @@
 
 Version 2.1.0
 ====================================
+2020-08-17
+PHP Apache server:
+- Added PHP module "mysqli" to enable access to MySQL databases
+
+Version 2.1.0
+====================================
+2020-01-27
 PHP Apache server:
 - Enabled PHP module "opcache" to accelerate loading times of PHP files
 
