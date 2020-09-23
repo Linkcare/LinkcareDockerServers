@@ -24,6 +24,7 @@ RUN a2dismod mpm_event && a2enmod mpm_prefork \
   # Add SSL modules
   && mv /etc/apache2/mods-available/ssl* /etc/apache2/mods-enabled/ \
   && mv /etc/apache2/mods-available/socache* /etc/apache2/mods-enabled/ \
+  && mv /etc/apache2/mods-available/rewrite* /etc/apache2/mods-enabled/ \
   && { \
   echo 'Mutex file:/var/lock/apache2 default'; \
   echo 'PidFile /var/run/apache2/apache2.pid'; \
