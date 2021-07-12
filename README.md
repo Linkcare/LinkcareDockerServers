@@ -2,7 +2,19 @@
 / * LinkcareDockerServer version history */
 /*****************************************/
 
-Version 2.1.0
+Version 2.4.0
+====================================
+2021-07-12
+PHP Apache server:
+- Added PHP module "pcntl" to enable Process Control functions
+
+Version 2.3.0
+====================================
+2020-09-23
+PHP Apache server:
+- Added PHP module "rewrite" to enable redirection rules in Apache (.htaccess files)
+
+Version 2.2.0
 ====================================
 2020-08-17
 PHP Apache server:
