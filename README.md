@@ -3,6 +3,9 @@ LinkcareDockerServers version history
 
 PHP Versions
 ====================================
+Version 2.5.0 (2022-07-06)
+- Added PHP module "intl" to enable using collation order when sorting strings in different languages
+
 Version 2.4.0 (2021-07-12)
 - Added PHP module "pcntl" to enable Process Control functions
 

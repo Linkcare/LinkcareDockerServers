@@ -108,6 +108,7 @@ RUN cd /usr/src/php; \
     --disable-cgi \
     --enable-mysqlnd \
     --enable-mbstring \
+    --enable-intl \
     --enable-pcntl \
     --with-mysqli \
     --with-curl \
