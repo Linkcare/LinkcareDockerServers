@@ -2,6 +2,14 @@
 ---------------------------------------------
 ## PHP Versions
 
+### Version 7.4.33.1 (2023-11-26)
+*Uploaded to Docker Repository as linkcare/linkcaredockerservers:PHP_7_4_33_1*
+
+Added support for MySQL
+
+- Installed the OS MySQL Driver
+- PHP compiled with extension pdo-mysql
+
 ### Version 7.4.33 (2022-07-06)
 *Uploaded to Docker Repository as linkcare/linkcaredockerservers:PHP_7_4_33*
 

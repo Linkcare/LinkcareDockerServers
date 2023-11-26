@@ -4,11 +4,11 @@ ENV PHP_INI_DIR /usr/local/etc/php
 RUN mkdir -p $PHP_INI_DIR/conf.d
 
 ## Install last apache version ##
-RUN apt update && apt upgrade \
-  && DEBIAN_FRONTEND=noninteractive apt install -y dirmngr ca-certificates curl software-properties-common apt-transport-https \
+RUN export DEBIAN_FRONTEND=noninteractive && apt -y update && apt -y upgrade \
+  && apt install -y dirmngr ca-certificates curl software-properties-common apt-transport-https \
   && add-apt-repository ppa:ondrej/apache2 -y
 
-RUN apt-get update && apt-get install -y apache2 --no-install-recommends
+RUN apt -y update && apt-get install -y apache2 --no-install-recommends
 
 RUN rm -rf /var/www/html \
   && mkdir -p /var/lock/apache2 /var/run/apache2 /var/log/apache2 /var/www/html \
@@ -92,14 +92,14 @@ ENV PHP_SHA256 924846abf93bc613815c55dd3f5809377813ac62a9ec4eb3778675b82a27b927
 
 COPY php-ext-* /usr/local/bin/
 RUN chmod 755 /usr/local/bin/php-ext-* \
-  && apt-get update \
+  && apt -y update \
   && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c --no-install-recommends \
   # persistent / runtime deps
   && DEBIAN_FRONTEND=noninteractive apt-get install -y libedit2 libsqlite3-0 libxml2 --no-install-recommends
 
 RUN set -xe; \
   buildDeps="$PHP_EXTRA_BUILD_DEPS libcurl4-openssl-dev libedit-dev libsqlite3-dev libssl-dev  libxml2-dev  xz-utils"; \
-  apt-get update && apt-get install -y $buildDeps --no-install-recommends; \
+  apt -y update && apt-get install -y $buildDeps --no-install-recommends; \
   curl -fSL "https://www.php.net/distributions/$PHP_FILENAME" -o "$PHP_FILENAME"; \
   echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c -; \
   mkdir -p /usr/src/php; \
@@ -107,7 +107,7 @@ RUN set -xe; \
   rm "$PHP_FILENAME"
 
 # Install libraries required for PHP extensions
-RUN apt-get update && apt-get install -y apt-utils git wget curl libxml2-dev libbz2-dev re2c libpng++-dev libjpeg-dev libvpx-dev zlib1g-dev \
+RUN apt -y update && apt-get install -y apt-utils git wget curl libxml2-dev libbz2-dev re2c libpng++-dev libjpeg-dev libvpx-dev zlib1g-dev \
   libgd-dev libssl-dev libtidy-dev libxslt1-dev libmagic-dev libexif-dev file libssh2-1-dev libaio-dev libbz2-dev libpng-dev \
   libpcre3-dev libfreetype6-dev libmcrypt-dev libxslt-dev xfonts-base xfonts-75dpi fonts-texgyre \
   fonts-wqy-microhei ttf-wqy-microhei fonts-wqy-zenhei ttf-wqy-zenhei libzip-dev libonig-dev unzip openssl php-dev php-pear build-essential libaio1
@@ -124,6 +124,7 @@ RUN cd /usr/src/php; \
     --enable-intl \
     --enable-pcntl \
     --with-mysqli \
+    --with-pdo-mysql \
     --with-curl \
     --with-libedit \
     --with-openssl \
@@ -152,6 +153,9 @@ RUN pecl channel-update pecl.php.net && pecl install mcrypt-1.0.6 && php-ext-con
   && php-ext-configure oci8 --with-oci8=instantclient,/usr/lib/oracle/21.9/client64/lib \
   && php-ext-install iconv mbstring xsl soap bcmath bz2 calendar exif shmop gd zip oci8 \
   && php-ext-enable mcrypt opcache
+
+#install MySQL Drivers
+RUN apt -y update && apt-get install -y sqlite php-sqlite3
 
 # Install Redis PHP extension
 RUN pecl install redis && php-ext-enable redis
