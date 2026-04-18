@@ -1,198 +1,139 @@
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
-ENV PHP_INI_DIR /usr/local/etc/php
-RUN mkdir -p $PHP_INI_DIR/conf.d
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Madrid
 
-## Install last apache version ##
-RUN export DEBIAN_FRONTEND=noninteractive && apt -y update && apt -y upgrade \
-  && apt install -y dirmngr ca-certificates curl software-properties-common apt-transport-https \
-  && add-apt-repository ppa:ondrej/apache2 -y
-
-RUN apt -y update && apt-get install -y apache2 --no-install-recommends
-
-RUN rm -rf /var/www/html \
-  && mkdir -p /var/lock/apache2 /var/run/apache2 /var/log/apache2 /var/www/html \
-  && chown -R www-data:www-data /var/lock/apache2 /var/run/apache2 /var/log/apache2 /var/www/html
-
-# Apache + PHP requires preforking Apache for best results
-RUN a2dismod mpm_event && a2enmod mpm_prefork \
-  && mv /etc/apache2/apache2.conf /etc/apache2/apache2.conf.dist \
-  && rm /etc/apache2/conf-enabled/* /etc/apache2/sites-enabled/* \
-  # Add SSL modules
-  && mv /etc/apache2/mods-available/ssl* /etc/apache2/mods-enabled/ \
-  && mv /etc/apache2/mods-available/socache* /etc/apache2/mods-enabled/ \
-  && mv /etc/apache2/mods-available/rewrite* /etc/apache2/mods-enabled/ \
-  && { \
-  echo 'Mutex file:/var/lock/apache2 default'; \
-  echo 'PidFile /var/run/apache2/apache2.pid'; \
-  echo 'Timeout 300'; \
-  echo 'KeepAlive On'; \
-  echo 'MaxKeepAliveRequests 100'; \
-  echo 'KeepAliveTimeout 5'; \
-  echo 'User www-data'; \
-  echo 'Group www-data'; \
-  echo 'HostnameLookups Off'; \
-  echo 'ErrorLog /proc/self/fd/2'; \
-  echo 'LogLevel warn'; \
-  echo ' '; \
-  echo 'IncludeOptional mods-enabled/*.load'; \
-  echo 'IncludeOptional mods-enabled/*.conf'; \
-  echo ' '; \
-  echo '# ports.conf'; \
-  echo "Listen 80"; \
-  echo ' '; \
-  echo '<Directory />'; \
-  echo '  Options FollowSymLinks'; \
-  echo '  AllowOverride None'; \
-  echo '  Require all denied'; \
-  echo '</Directory>'; \
-  echo ' '; \
-  echo '<Directory /var/www/>'; \
-  echo '  AllowOverride All'; \
-  echo '  Require all granted'; \
-  echo '</Directory>'; \
-  echo ' '; \
-  echo 'DocumentRoot /var/www/html'; \
-  echo ' '; \
-  echo 'AccessFileName .htaccess'; \
-  echo '<FilesMatch "^\.ht">'; \
-  echo '  Require all denied'; \
-  echo '</FilesMatch>'; \
-  echo ' '; \
-  echo 'LogFormat "%v:%p %h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" vhost_combined'; \
-  echo 'LogFormat "%h %l %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined'; \
-  echo 'LogFormat "%h %l %u %t \"%r\" %>s %O" common'; \
-  echo 'LogFormat "%{Referer}i -> %U" referer'; \
-  echo 'LogFormat "%{User-agent}i" agent'; \
-  echo ' '; \
-  echo 'CustomLog /var/log/apache2/custom_log combined'; \
-  echo ' '; \
-  echo '<FilesMatch \.php$>'; \
-  echo '  SetHandler application/x-httpd-php'; \
-  echo '</FilesMatch>'; \
-  echo ' '; \
-  echo '# Multiple DirectoryIndex directives within the same context will add'; \
-  echo '# to the list of resources to look for rather than replace'; \
-  echo '# https://httpd.apache.org/docs/current/mod/mod_dir.html#directoryindex'; \
-  echo 'DirectoryIndex disabled'; \
-  echo 'DirectoryIndex index.php index.html'; \
-  echo ' '; \
-  echo '# Disable TRACE http requests'; \
-  echo 'TraceEnable off'; \
-  echo ' '; \
-  echo 'IncludeOptional conf-enabled/*.conf'; \
-  echo 'IncludeOptional sites-enabled/*.conf'; \
-  } > /etc/apache2/apache2.conf
-
-ENV PHP_EXTRA_BUILD_DEPS apache2-dev
-ENV PHP_EXTRA_CONFIGURE_ARGS --with-apxs2
-
-ENV PHP_FILENAME php-7.4.33.tar.xz
-ENV PHP_SHA256 924846abf93bc613815c55dd3f5809377813ac62a9ec4eb3778675b82a27b927
-
-COPY php-ext-* /usr/local/bin/
-RUN chmod 755 /usr/local/bin/php-ext-* \
-  && apt -y update \
-  && apt-get install -y autoconf file g++ gcc libc-dev make pkg-config re2c --no-install-recommends \
-  # persistent / runtime deps
-  && DEBIAN_FRONTEND=noninteractive apt-get install -y libedit2 libsqlite3-0 libxml2 --no-install-recommends
-
-RUN set -xe; \
-  buildDeps="$PHP_EXTRA_BUILD_DEPS libcurl4-openssl-dev libedit-dev libsqlite3-dev libssl-dev  libxml2-dev  xz-utils"; \
-  apt -y update && apt-get install -y $buildDeps --no-install-recommends; \
-  curl -fSL "https://www.php.net/distributions/$PHP_FILENAME" -o "$PHP_FILENAME"; \
-  echo "$PHP_SHA256 *$PHP_FILENAME" | sha256sum -c -; \
-  mkdir -p /usr/src/php; \
-  tar -xf "$PHP_FILENAME" -C /usr/src/php --strip-components=1; \
-  rm "$PHP_FILENAME"
-
-# Install libraries required for PHP extensions
-RUN apt -y update && apt-get install -y apt-utils git wget curl libxml2-dev libbz2-dev re2c libpng++-dev libjpeg-dev libvpx-dev zlib1g-dev \
-  libgd-dev libssl-dev libtidy-dev libxslt1-dev libmagic-dev libexif-dev file libssh2-1-dev libaio-dev libbz2-dev libpng-dev \
-  libpcre3-dev libfreetype6-dev libmcrypt-dev libxslt-dev xfonts-base xfonts-75dpi fonts-texgyre \
-  fonts-wqy-microhei ttf-wqy-microhei fonts-wqy-zenhei ttf-wqy-zenhei libzip-dev libonig-dev unzip openssl php-dev php-pear build-essential libaio1
+# ------------------------------------------------------
+# Base system + repositories
+# ------------------------------------------------------
+RUN apt update && apt upgrade -y \
+ && apt install -y --no-install-recommends \
+    software-properties-common \
+    ca-certificates \
+    curl \
+    wget \
+    gnupg \
+    unzip \
+    lsb-release \
+ && rm -rf /var/lib/apt/lists/*
 
 
-RUN cd /usr/src/php; \
-  ./configure \
-    --with-config-file-path="$PHP_INI_DIR" \
-    --with-config-file-scan-dir="$PHP_INI_DIR/conf.d" \
-    $PHP_EXTRA_CONFIGURE_ARGS \
-    --disable-cgi \
-    --enable-mysqlnd \
-    --enable-mbstring \
-    --enable-intl \
-    --enable-pcntl \
-    --with-mysqli \
-    --with-pdo-mysql \
-    --with-curl \
-    --with-libedit \
-    --with-openssl \
-    --with-zlib; \
-  make -j"$(nproc)"; \
-  make install; \
-  { find /usr/local/bin /usr/local/sbin -type f -executable -exec strip --strip-all '{}' + || true; }; \
-  make clean
+# ------------------------------------------------------
+# Apache (and modify default configuration to redirect error logs to Docker)
+# ------------------------------------------------------
+RUN apt update && apt install -y --no-install-recommends apache2 apache2-utils \
+ && a2dismod mpm_event \
+ && a2enmod mpm_prefork rewrite ssl \
+ && sed -Ei 's|^(\s*)ErrorLog .*|\1ErrorLog /proc/self/fd/2|g' /etc/apache2/apache2.conf \
+ && sed -Ei 's|^(\s*)ErrorLog .*|\1ErrorLog /proc/self/fd/2|g' /etc/apache2/sites-available/000-default.conf \
+ && sed -Ei 's|^(\s*)CustomLog .*|\1#CustomLog /proc/self/fd/1 combined|g' /etc/apache2/apache2.conf \
+ && sed -Ei 's|^(\s*)CustomLog .*|\1#CustomLog /proc/self/fd/1 combined|g' /etc/apache2/sites-available/000-default.conf \
+ && rm -rf /var/lib/apt/lists/*
 
-# INSTALL AND CONFIGURE PHP EXTENSIONS
-# Copy Oracle instantclient files (OS drivers)
-COPY OracleClient/* /tmp/
+# ------------------------------------------------------
+# PHP 8.3 + core extensions
+# ------------------------------------------------------
+RUN apt update && apt install -y \
+    libapache2-mod-php8.3 \
+    php8.3 \
+    php8.3-cli \
+    php8.3-common \
+    php8.3-dev \
+    php8.3-opcache \
+    php8.3-mysql \
+    php8.3-pgsql \
+    php8.3-sqlite3 \
+    php8.3-curl \
+    php8.3-gd \
+    php8.3-intl \
+    php8.3-mbstring \
+    php8.3-soap \
+    php8.3-xml \
+    php8.3-xsl \
+    php8.3-zip \
+    php8.3-bcmath \
+    php8.3-bz2 \
+    php8.3-exif \
+    php8.3-calendar \
+    php8.3-shmop \
+    php8.3-redis \
+    php-pear \
+    build-essential \
+ && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p mkdir /usr/lib/oracle/21.9/client64 \
-  && mv tmp/instantclient-basic-linux.x64-21.9.0.0.0dbru.zip /usr/lib/oracle/21.9/client64 \
-  && mv tmp/instantclient-sdk-linux.x64-21.9.0.0.0dbru.zip /usr/lib/oracle/21.9/client64 \
-  && cd /usr/lib/oracle/21.9/client64 \
-  && unzip instantclient-basic-linux.x64-21.9.0.0.0dbru.zip \
-  && unzip instantclient-sdk-linux.x64-21.9.0.0.0dbru.zip \
-  && mv instantclient_21_9 lib \
-  && cd /usr/lib/oracle/21.9/client64/lib/ \
-  && echo /usr/lib/oracle/21.9/client64/lib > /etc/ld.so.conf.d/oracle.conf \
-  && ldconfig
 
-RUN pecl channel-update pecl.php.net && pecl install mcrypt-1.0.6 && php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ \
-  && php-ext-configure oci8 --with-oci8=instantclient,/usr/lib/oracle/21.9/client64/lib \
-  && php-ext-install iconv mbstring xsl soap bcmath bz2 calendar exif shmop gd zip oci8 \
-  && php-ext-enable mcrypt opcache
+# ------------------------------------------------------
+# Oracle Instant Client 21.9
+# ------------------------------------------------------
+COPY OracleClient/* /tmp/oracle/
 
-#install MySQL Drivers
-RUN apt -y update && apt-get install -y sqlite php-sqlite3
+RUN mkdir -p /usr/lib/oracle/21.9/client64 \
+ && cd /usr/lib/oracle/21.9/client64 \
+ && unzip /tmp/oracle/instantclient-basic-linux.x64-21.9.0.0.0dbru.zip \
+ && unzip /tmp/oracle/instantclient-sdk-linux.x64-21.9.0.0.0dbru.zip \
+ && mv instantclient_21_9 lib \
+ && echo /usr/lib/oracle/21.9/client64/lib > /etc/ld.so.conf.d/oracle.conf \
+ && apt update && apt install -y libaio1t64 \
+ && ln -s /lib/x86_64-linux-gnu/libaio.so.1t64.0.2 /lib/x86_64-linux-gnu/libaio.so.1 \      
+ && ldconfig
 
-# Install Redis PHP extension
-RUN pecl install redis && php-ext-enable redis
+# ------------------------------------------------------
+# OCI8 and OAuth (PECL)
+# ------------------------------------------------------
+RUN pecl channel-update pecl.php.net \
+ && pecl install oci8 \
+ && echo "extension=oci8" > /etc/php/8.3/mods-available/oci8.ini \
+ && phpenmod oci8 \
+ && pecl install oauth \
+ && echo "extension=oauth" > /etc/php/8.3/mods-available/oauth.ini \
+ && phpenmod oauth
 
-# Install oauth (authentication) PHP extension
-RUN pecl install oauth \
-  && php-ext-enable oauth
+# ------------------------------------------------------
+# Runtime-only cleanup
+# Remove compiler tools not necessary after build
+# ------------------------------------------------------
+RUN apt purge -y \
+    build-essential \
+    php8.3-dev \
+    software-properties-common \
+    gnupg \
+    lsb-release \
+ && apt autoremove -y \
+ && rm -rf \
+    /var/lib/apt/lists/* \
+    /usr/share/doc/* \
+    /usr/share/man/* \
+    /usr/share/locale/* \
+    /tmp/*
 
-# Needed for wkhtmltopdf, installed by composer
-RUN apt-get install -y libxrender1
+# ------------------------------------------------------
+# wkhtmltopdf runtime dependency
+# ------------------------------------------------------
+RUN apt update && apt install -y libxrender1
 
-# Install base packages
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin/ --filename=composer
+# ------------------------------------------------------
+# Composer
+# ------------------------------------------------------
+RUN curl -sS https://getcomposer.org/installer \
+ | php -- --install-dir=/usr/bin --filename=composer
 
-# Upgrade OpenSSL Version to 1.1.1t
-RUN cp -R /usr/lib/ssl /usr/lib/ssl-1.1.1f \
-  && wget https://www.openssl.org/source/openssl-1.1.1t.tar.gz \
-  && tar -zxf openssl-1.1.1t.tar.gz \
-  && rm openssl-1.1.1t.tar.gz \
-  && cd openssl-1.1.1t \
-  && ./config \
-  && make \
-  && make install \
-  && mv /usr/bin/openssl /usr/bin/openssl-1.1.1f \
-  && ln -s /usr/local/bin/openssl /usr/bin/openssl \
-  && ldconfig \
-  && cd /usr/local/ssl \
-  && rmdir certs \
-  && ln -s /etc/ssl/certs \
-  && rmdir private \
-  && ln -s /etc/ssl/private \
-  && mv openssl.cnf openssl.cnf.original \
-  && ln -s /etc/ssl/openssl.cnf
+# ------------------------------------------------------
+# Configure default memory and file upload limits
+# Redirect PHP error logs to Docker
+# ------------------------------------------------------
+RUN { \
+  echo 'upload_max_filesize = 8M'; \
+  echo 'memory_limit = 256M'; \
+  echo 'log_errors = On'; \
+  echo 'error_log = /proc/self/fd/2'; \
+  } > /etc/php/8.3/mods-available/lkconf.ini \
+  && phpenmod lkconf
 
-# Apache start command
+# ------------------------------------------------------
+# Apache startup
+# ------------------------------------------------------
 COPY apache2-foreground /usr/local/bin/
-RUN chmod 755 /usr/local/bin/apache2-foreground
+RUN chmod +x /usr/local/bin/apache2-foreground
 
 EXPOSE 80
 CMD ["apache2-foreground"]
