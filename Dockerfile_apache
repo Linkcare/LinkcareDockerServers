@@ -109,7 +109,7 @@ RUN apt purge -y \
 # ------------------------------------------------------
 # wkhtmltopdf runtime dependency
 # ------------------------------------------------------
-RUN apt update && apt install -y libxrender1
+RUN apt update && apt install -y libxext6 libxrender1 libfontconfig1 libfreetype6 libx11-6 xfonts-base xfonts-75dpi fonts-texgyre fonts-wqy-microhei ttf-wqy-microhei fonts-wqy-zenhei ttf-wqy-zenhei
 
 # ------------------------------------------------------
 # Composer
