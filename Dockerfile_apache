@@ -30,14 +30,15 @@ RUN apt update && apt install -y --no-install-recommends apache2 apache2-utils \
   echo '<VirtualHost *:80>'; \
   echo '  ServerAdmin webmaster@localhost'; \
   echo '  DocumentRoot /var/www/html'; \
+  echo '  DirectoryIndex index.php index.html index.htm'; \
   echo '  <Directory /var/www/html>'; \
   echo '    AllowOverride All'; \
   echo '  </Directory>'; \
   echo '  ErrorLog /proc/self/fd/2'; \
   echo '</VirtualHost>'; \
   } > /etc/apache2/sites-available/000-default.conf \
+ && rm -rf /var/www/html/* \
  && rm -rf /var/lib/apt/lists/*
-
 
 # ------------------------------------------------------
 # PHP 8.3 + core extensions
