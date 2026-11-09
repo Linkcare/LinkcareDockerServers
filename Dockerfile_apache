@@ -15,6 +15,8 @@ RUN apt update && apt upgrade -y \
     gnupg \
     unzip \
     lsb-release \
+ && add-apt-repository -y ppa:ondrej/php \
+ && apt update \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -41,34 +43,35 @@ RUN apt update && apt install -y --no-install-recommends apache2 apache2-utils \
  && rm -rf /var/lib/apt/lists/*
 
 # ------------------------------------------------------
-# PHP 8.3 + core extensions
+# PHP 8.5 + core extensions (security-patched branch)
 # ------------------------------------------------------
 RUN apt update && apt install -y \
-    libapache2-mod-php8.3 \
-    php8.3 \
-    php8.3-cli \
-    php8.3-common \
-    php8.3-dev \
-    php8.3-opcache \
-    php8.3-mysql \
-    php8.3-pgsql \
-    php8.3-sqlite3 \
-    php8.3-curl \
-    php8.3-gd \
-    php8.3-intl \
-    php8.3-mbstring \
-    php8.3-soap \
-    php8.3-xml \
-    php8.3-xsl \
-    php8.3-zip \
-    php8.3-bcmath \
-    php8.3-bz2 \
-    php8.3-exif \
-    php8.3-calendar \
-    php8.3-shmop \
-    php8.3-redis \
+    libapache2-mod-php8.5 \
+    php8.5 \
+    php8.5-cli \
+    php8.5-common \
+    php8.5-dev \
+    php8.5-mysql \
+    php8.5-pgsql \
+    php8.5-sqlite3 \
+    php8.5-curl \
+    php8.5-gd \
+    php8.5-intl \
+    php8.5-mbstring \
+    php8.5-soap \
+    php8.5-xml \
+    php8.5-xsl \
+    php8.5-zip \
+    php8.5-bcmath \
+    php8.5-bz2 \
+    php8.5-exif \
+    php8.5-calendar \
+    php8.5-shmop \
+    php8.5-redis \
     php-pear \
     build-essential \
+ && php -r 'exit(version_compare(PHP_VERSION, "8.5.12", ">=") ? 0 : 1);' \
+ && php -v \
  && rm -rf /var/lib/apt/lists/*
 
 
@@ -84,18 +87,18 @@ RUN mkdir -p /usr/lib/oracle/21.9/client64 \
  && mv instantclient_21_9 lib \
  && echo /usr/lib/oracle/21.9/client64/lib > /etc/ld.so.conf.d/oracle.conf \
  && apt update && apt install -y libaio1t64 \
- && ln -s /lib/x86_64-linux-gnu/libaio.so.1t64.0.2 /lib/x86_64-linux-gnu/libaio.so.1 \      
+ && ln -s /lib/x86_64-linux-gnu/libaio.so.1t64.0.2 /lib/x86_64-linux-gnu/libaio.so.1 \
  && ldconfig
 
 # ------------------------------------------------------
 # OCI8 and OAuth (PECL)
 # ------------------------------------------------------
 RUN pecl channel-update pecl.php.net \
- && pecl install oci8 \
- && echo "extension=oci8" > /etc/php/8.3/mods-available/oci8.ini \
+ && printf 'instantclient,/usr/lib/oracle/21.9/client64/lib\n' | pecl install oci8 \
+ && echo "extension=oci8" > /etc/php/8.5/mods-available/oci8.ini \
  && phpenmod oci8 \
  && pecl install oauth \
- && echo "extension=oauth" > /etc/php/8.3/mods-available/oauth.ini \
+ && echo "extension=oauth" > /etc/php/8.5/mods-available/oauth.ini \
  && phpenmod oauth
 
 # ------------------------------------------------------
@@ -104,7 +107,7 @@ RUN pecl channel-update pecl.php.net \
 # ------------------------------------------------------
 RUN apt purge -y \
     build-essential \
-    php8.3-dev \
+    php8.5-dev \
     software-properties-common \
     gnupg \
     lsb-release \
@@ -132,11 +135,12 @@ RUN curl -sS https://getcomposer.org/installer \
 # Redirect PHP error logs to Docker
 # ------------------------------------------------------
 RUN { \
-  echo 'upload_max_filesize = 8M'; \
+  echo 'upload_max_filesize = 64M'; \
   echo 'memory_limit = 256M'; \
+  echo 'post_max_size = 64M'; \
   echo 'log_errors = On'; \
   echo 'error_log = /proc/self/fd/2'; \
-  } > /etc/php/8.3/mods-available/lkconf.ini \
+  } > /etc/php/8.5/mods-available/lkconf.ini \
   && phpenmod lkconf
 
 # ------------------------------------------------------
